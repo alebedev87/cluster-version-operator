@@ -161,6 +161,10 @@ type Operator struct {
 
 	clusterProfile string
 	uid            types.UID
+
+	// alwaysEnableCapabilities is a list of the cluster capabilities which should
+	// always be implicitly enabled.
+	alwaysEnableCapabilities []configv1.ClusterVersionCapability
 }
 
 // New returns a new cluster version operator.
@@ -180,6 +184,7 @@ func New(
 	exclude string,
 	requiredFeatureSet string,
 	clusterProfile string,
+	alwaysEnableCapabilities []configv1.ClusterVersionCapability,
 ) (*Operator, error) {
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(klog.Infof)
@@ -207,10 +212,11 @@ func New(
 		availableUpdatesQueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "availableupdates"),
 		upgradeableQueue:      workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "upgradeable"),
 
-		exclude:            exclude,
-		requiredFeatureSet: requiredFeatureSet,
-		clusterProfile:     clusterProfile,
-		conditionRegistry:  standard.NewConditionRegistry(kubeClient),
+		exclude:                  exclude,
+		requiredFeatureSet:       requiredFeatureSet,
+		clusterProfile:           clusterProfile,
+		conditionRegistry:        standard.NewConditionRegistry(kubeClient),
+		alwaysEnableCapabilities: alwaysEnableCapabilities,
 	}
 
 	if _, err := cvInformer.Informer().AddEventHandler(optr.clusterVersionEventHandler()); err != nil {
@@ -313,6 +319,7 @@ func (optr *Operator) InitializeFromPayload(ctx context.Context, restConfig *res
 		optr.requiredFeatureSet,
 		optr.eventRecorder,
 		optr.clusterProfile,
+		optr.alwaysEnableCapabilities,
 	)
 
 	return nil

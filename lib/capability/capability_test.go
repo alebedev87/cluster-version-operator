@@ -39,6 +39,7 @@ func TestSetCapabilities(t *testing.T) {
 				string(configv1.ClusterVersionCapabilityMarketplace),
 				string(configv1.ClusterVersionCapabilityOpenShiftSamples),
 				string(configv1.ClusterVersionCapabilityConsole),
+				string(configv1.ClusterVersionCapabilityIngress),
 				string(configv1.ClusterVersionCapabilityInsights),
 				string(configv1.ClusterVersionCapabilityStorage),
 				string(configv1.ClusterVersionCapabilityCSISnapshot),
@@ -61,6 +62,7 @@ func TestSetCapabilities(t *testing.T) {
 				string(configv1.ClusterVersionCapabilityMarketplace),
 				string(configv1.ClusterVersionCapabilityOpenShiftSamples),
 				string(configv1.ClusterVersionCapabilityConsole),
+				string(configv1.ClusterVersionCapabilityIngress),
 				string(configv1.ClusterVersionCapabilityInsights),
 				string(configv1.ClusterVersionCapabilityStorage),
 				string(configv1.ClusterVersionCapabilityCSISnapshot),
@@ -87,6 +89,7 @@ func TestSetCapabilities(t *testing.T) {
 				string(configv1.ClusterVersionCapabilityMarketplace),
 				string(configv1.ClusterVersionCapabilityOpenShiftSamples),
 				string(configv1.ClusterVersionCapabilityConsole),
+				string(configv1.ClusterVersionCapabilityIngress),
 				string(configv1.ClusterVersionCapabilityInsights),
 				string(configv1.ClusterVersionCapabilityStorage),
 				string(configv1.ClusterVersionCapabilityCSISnapshot),
@@ -98,6 +101,7 @@ func TestSetCapabilities(t *testing.T) {
 				string(configv1.ClusterVersionCapabilityMarketplace),
 				string(configv1.ClusterVersionCapabilityOpenShiftSamples),
 				string(configv1.ClusterVersionCapabilityConsole),
+				string(configv1.ClusterVersionCapabilityIngress),
 				string(configv1.ClusterVersionCapabilityInsights),
 				string(configv1.ClusterVersionCapabilityStorage),
 				string(configv1.ClusterVersionCapabilityCSISnapshot),
@@ -119,6 +123,7 @@ func TestSetCapabilities(t *testing.T) {
 				string(configv1.ClusterVersionCapabilityMarketplace),
 				string(configv1.ClusterVersionCapabilityOpenShiftSamples),
 				string(configv1.ClusterVersionCapabilityConsole),
+				string(configv1.ClusterVersionCapabilityIngress),
 				string(configv1.ClusterVersionCapabilityInsights),
 				string(configv1.ClusterVersionCapabilityStorage),
 				string(configv1.ClusterVersionCapabilityCSISnapshot),
@@ -141,6 +146,7 @@ func TestSetCapabilities(t *testing.T) {
 				string(configv1.ClusterVersionCapabilityMarketplace),
 				string(configv1.ClusterVersionCapabilityOpenShiftSamples),
 				string(configv1.ClusterVersionCapabilityConsole),
+				string(configv1.ClusterVersionCapabilityIngress),
 				string(configv1.ClusterVersionCapabilityInsights),
 				string(configv1.ClusterVersionCapabilityStorage),
 				string(configv1.ClusterVersionCapabilityCSISnapshot),
@@ -159,7 +165,7 @@ func TestSetCapabilities(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			caps := SetCapabilities(test.config, nil)
+			caps := SetCapabilities(test.config, nil, nil)
 			if test.config.Spec.Capabilities == nil || (test.config.Spec.Capabilities != nil &&
 				len(test.config.Spec.Capabilities.BaselineCapabilitySet) == 0) {
 
@@ -192,6 +198,7 @@ func TestSetCapabilitiesWithImplicitlyEnabled(t *testing.T) {
 		config       *configv1.ClusterVersion
 		wantImplicit []string
 		priorEnabled map[configv1.ClusterVersionCapability]struct{}
+		alwaysEnable map[configv1.ClusterVersionCapability]struct{}
 	}{
 		{name: "set capabilities 4_11 with additional",
 			config: &configv1.ClusterVersion{
@@ -204,10 +211,33 @@ func TestSetCapabilitiesWithImplicitlyEnabled(t *testing.T) {
 			priorEnabled: map[configv1.ClusterVersionCapability]struct{}{"cap1": {}, "cap2": {}, "cap3": {}},
 			wantImplicit: []string{"cap1", "cap2", "cap3"},
 		},
+		{name: "set capabilities 4_11 with always enabled",
+			config: &configv1.ClusterVersion{
+				Spec: configv1.ClusterVersionSpec{
+					Capabilities: &configv1.ClusterVersionCapabilitiesSpec{
+						BaselineCapabilitySet: configv1.ClusterVersionCapabilitySet4_11,
+					},
+				},
+			},
+			alwaysEnable: map[configv1.ClusterVersionCapability]struct{}{"cap1": {}, "cap2": {}, "cap3": {}},
+			wantImplicit: []string{"cap1", "cap2", "cap3"},
+		},
+		{name: "set capabilities 4_11 with additional and always enabled",
+			config: &configv1.ClusterVersion{
+				Spec: configv1.ClusterVersionSpec{
+					Capabilities: &configv1.ClusterVersionCapabilitiesSpec{
+						BaselineCapabilitySet: configv1.ClusterVersionCapabilitySet4_11,
+					},
+				},
+			},
+			priorEnabled: map[configv1.ClusterVersionCapability]struct{}{"cap1": {}, "cap2": {}, "cap3": {}},
+			alwaysEnable: map[configv1.ClusterVersionCapability]struct{}{"cap1": {}, "cap2": {}, "cap4": {}},
+			wantImplicit: []string{"cap1", "cap2", "cap3", "cap4"},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			caps := SetCapabilities(test.config, test.priorEnabled)
+			caps := SetCapabilities(test.config, test.priorEnabled, test.alwaysEnable)
 			if len(caps.ImplicitlyEnabledCapabilities) != len(test.wantImplicit) {
 				t.Errorf("Incorrect number of implicitly enabled keys, wanted: %q. ImplicitlyEnabledCapabilities returned: %v", test.wantImplicit, caps.ImplicitlyEnabledCapabilities)
 			}

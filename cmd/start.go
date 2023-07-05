@@ -39,5 +39,6 @@ func init() {
 	cmd.PersistentFlags().StringVar(&opts.ReleaseImage, "release-image", opts.ReleaseImage, "The Openshift release image url.")
 	cmd.PersistentFlags().StringVar(&opts.ServingCertFile, "serving-cert-file", opts.ServingCertFile, "The X.509 certificate file for serving metrics over HTTPS.  You must set both --serving-cert-file and --serving-key-file unless you set --listen empty.")
 	cmd.PersistentFlags().StringVar(&opts.ServingKeyFile, "serving-key-file", opts.ServingKeyFile, "The X.509 key file for serving metrics over HTTPS.  You must set both --serving-cert-file and --serving-key-file unless you set --listen empty.")
+	cmd.PersistentFlags().StringSliceVar(&opts.AlwaysEnableCapabilities, "always-enable-capabilities", opts.AlwaysEnableCapabilities, "List of the cluster capabilities which will always be implicitly enabled.")
 	rootCmd.AddCommand(cmd)
 }
